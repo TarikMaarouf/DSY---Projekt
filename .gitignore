@@ -39,3 +39,6 @@ build/
 .DS_Store
 ### H2-database (oprettes automatisk ved opstart) ###
 data/
+
+### IntelliJ (lokale indstillinger) ###
+.idea/
