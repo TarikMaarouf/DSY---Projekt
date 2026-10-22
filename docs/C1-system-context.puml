@@ -1,0 +1,32 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+title C1 - System Context: Slagteri
+
+Person(reception, "Modtagelsesmedarbejder", "Station 1: vejer og registrerer dyr")
+Person(cutter, "Opskæringsmedarbejder", "Station 2: skærer dyr i dele og lægger dem i bakker")
+Person(packer, "Pakkemedarbejder", "Station 3: pakker produkter fra bakker")
+Person_Ext(authority, "Fødevaremyndighed / Kunde", "Starter tilbagekaldelse (recall)")
+
+System(slaughter, "Slagteri-sporbarhedssystem", "Registrerer dyr, dele, bakker og produkter og sporer dem")
+System_Ext(farm, "Gård", "Leverer levende dyr")
+System_Ext(distributor, "Distributør / Supermarked", "Modtager produkter")
+
+Rel(farm, reception, "Leverer dyr (fysisk)")
+Rel(reception, slaughter, "Registrerer dyr", "Direkte, synkron (REST)")
+Rel(cutter, slaughter, "Registrerer dele og bakker", "Direkte, synkron")
+Rel(packer, slaughter, "Registrerer produkter", "Direkte, synkron")
+Rel(authority, slaughter, "Forespørger recall", "Direkte, request-reply (gRPC)")
+Rel(slaughter, distributor, "Sender recall-besked", "Indirekte, asynkron")
+
+note right of slaughter
+  **Uafhængige stationer**
+  Internt kommunikerer stationerne
+  indirekte og asynkront (message queue).
+  Hver station gemmer data lokalt og kan
+  arbejde videre, selvom netværket er nede.
+  Data synkroniseres, når forbindelsen
+  er tilbage. (Detaljer i C2.)
+end note
+
+SHOW_LEGEND()
+@enduml

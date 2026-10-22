@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "org.example.grpc";
+
+package slaughterhouse;
+
+service TraceabilityService {
+  // Alle dyr, der kan indgå i et produkt
+  rpc GetAnimalsForProduct (ProductRequest) returns (AnimalList);
+  // Alle produkter, et dyr kan indgå i (bruges ved recall)
+  rpc GetProductsForAnimal (AnimalRequest) returns (ProductList);
+}
+
+message ProductRequest {
+  int64 product_id = 1;
+}
+
+message AnimalRequest {
+  string registration_number = 1;
+}
+
+message AnimalList {
+  repeated string registration_numbers = 1;
+}
+
+message ProductDto {
+  int64 id = 1;
+  string product_type = 2;
+}
+
+message ProductList {
+  repeated ProductDto products = 1;
+}

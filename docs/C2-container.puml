@@ -1,0 +1,40 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+title C2 - Container View: Slagteri-sporbarhedssystem
+
+Person(reception, "Modtagelsesmedarbejder", "Station 1")
+Person(cutter, "Opskæringsmedarbejder", "Station 2")
+Person(packer, "Pakkemedarbejder", "Station 3")
+Person_Ext(authority, "Fødevaremyndighed / Kunde", "Starter recall")
+System_Ext(distributor, "Distributør / Supermarked", "Modtager recall-beskeder")
+
+System_Boundary(system, "Slagteri-sporbarhedssystem") {
+    Container(station1, "Station 1-klient", "Postman / Swagger UI", "Registrerer dyr")
+    Container(station23, "Station 2- og 3-klienter", "Planlagt (Part 4)", "Registrerer dele, bakker og produkter. Gemmer lokalt, når netværket er nede")
+    ContainerQueue(queue, "Message broker", "RabbitMQ (planlagt, Part 4)", "Afkobler stationerne i tid og rum")
+
+    Container(backend, "Slagteri-backend", "Java 24, Spring Boot 3.5", "REST API (port 8081) til registrering af dyr og gRPC-service (port 9090) til sporbarhed/recall")
+    ContainerDb(db, "Database", "H2 (fil), JPA/Hibernate", "Dyr, dele, bakker og produkter")
+}
+
+Rel(reception, station1, "Bruger")
+Rel(cutter, station23, "Bruger")
+Rel(packer, station23, "Bruger")
+
+Rel(station1, backend, "POST/GET /animals", "Direkte, synkron, REST/JSON over HTTP")
+Rel(station23, queue, "Publicerer registreringer", "Indirekte, asynkron, AMQP")
+Rel(queue, backend, "Leverer registreringer", "Indirekte, asynkron, AMQP")
+
+Rel(authority, backend, "GetProductsForAnimal / GetAnimalsForProduct", "Direkte, synkron, gRPC/Protobuf over HTTP/2")
+Rel(backend, db, "Læser og skriver", "JDBC")
+Rel(backend, distributor, "Sender recall-besked", "Indirekte, asynkron")
+
+note bottom of queue
+  Implementeret i Part 2 og 3: backend,
+  database, REST og gRPC.
+  Message broker og station 2/3-klienter
+  er arkitekturens plan for Part 4.
+end note
+
+SHOW_LEGEND()
+@enduml

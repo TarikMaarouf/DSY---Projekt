@@ -1,0 +1,47 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+title C3 - Component View: Slagteri-backend (Spring Boot)
+
+Container(station1, "Station 1-klient", "Postman / Swagger UI", "Registrerer dyr")
+Person_Ext(authority, "Fødevaremyndighed / Kunde", "gRPC-klient (Postman / BloomRPC)")
+ContainerDb(db, "Database", "H2, JPA/Hibernate", "Tabeller: ANIMAL, PART, TRAY, PRODUCT, PRODUCT_TRAYS")
+
+Container_Boundary(backend, "Slagteri-backend") {
+    Component(animalController, "AnimalController", "Spring @RestController", "REST API: POST /animals, GET /animals/{registrationNumber}, GET /animals?date=..., GET /animals?origin=...")
+    Component(swagger, "Swagger UI / OpenAPI", "springdoc", "Dokumentation af REST API (/swagger-ui.html)")
+
+    Component(grpcServer, "GrpcServer", "gRPC Server (Netty), port 9090", "Starter og stopper gRPC-serveren sammen med Spring")
+    Component(traceService, "TraceabilityServiceImpl", "gRPC service (traceability.proto)", "GetAnimalsForProduct og GetProductsForAnimal")
+
+    Component(animalRepo, "AnimalRepository", "Spring Data JPA", "findByArrivalDate, findByOrigin")
+    Component(productRepo, "ProductRepository", "Spring Data JPA", "Sporbarhedsforespørgsler: Produkt -> Bakke -> Del -> Dyr")
+    Component(partRepo, "PartRepository", "Spring Data JPA", "Dele")
+    Component(trayRepo, "TrayRepository", "Spring Data JPA", "Bakker")
+    Component(dataLoader, "DataLoader", "CommandLineRunner", "Indlæser testdata ved første opstart")
+}
+
+Rel(station1, animalController, "JSON/HTTP", "REST, synkron")
+Rel(station1, swagger, "Afprøver API", "HTTP")
+Rel(authority, grpcServer, "Protobuf/HTTP/2", "gRPC, synkron")
+
+Rel(grpcServer, traceService, "Registrerer og kalder")
+Rel(animalController, animalRepo, "Bruger")
+Rel(traceService, productRepo, "Bruger")
+Rel(traceService, animalRepo, "Tjekker om dyret findes")
+Rel(dataLoader, animalRepo, "Gemmer")
+Rel(dataLoader, trayRepo, "Gemmer")
+Rel(dataLoader, partRepo, "Gemmer")
+Rel(dataLoader, productRepo, "Gemmer")
+
+Rel(animalRepo, db, "JDBC")
+Rel(productRepo, db, "JDBC")
+Rel(partRepo, db, "JDBC")
+Rel(trayRepo, db, "JDBC")
+
+note right of traceService
+  Alle afhængigheder gives via
+  constructor injection (Spring IoC/DI).
+end note
+
+SHOW_LEGEND()
+@enduml
